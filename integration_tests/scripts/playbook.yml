@@ -1,4 +1,5 @@
 - hosts: snmp_machine
+  become: yes
   vars:
     user: ubuntu
     dir: /home/ubuntu
@@ -13,16 +14,13 @@
     apt:
       update_cache: yes
       upgrade: "yes"
+
   - name: ensure gcc is at the latest version
     become: yes
     apt:
       name: gcc
       state: latest
-  - name: ensure awscli is at the latest version
-    become: yes
-    apt:
-      name: awscli
-      state: latest
+
   - name: Copying the Directory and its contents
     copy:
       src: splunk-connect-for-snmp.tgz
@@ -33,9 +31,9 @@
       dest: "{{ dir }}"
       remote_src: yes
   - name: Run install_microk8s.sh
-    command: ./install_microk8s.sh
+    command: ./integration_tests/install_microk8s.sh
     args:
-      chdir: "{{ dir }}/splunk-connect-for-snmp/integration_tests/"
+      chdir: "{{ dir }}/splunk-connect-for-snmp"
     environment:
       - ANSIBLE_RUN: yes
   - name: Ensure group "docker" exists
@@ -52,8 +50,8 @@
   - name: reset ssh connection
     meta: reset_connection
   - name: Run automatic_setup_microk8s.sh
-    command: ./automatic_setup_microk8s.sh
+    command: ./integration_tests/automatic_setup_microk8s.sh
     args:
-      chdir: "{{ dir }}/splunk-connect-for-snmp/integration_tests/"
+      chdir: "{{ dir }}/splunk-connect-for-snmp"
     environment:
       S3_PATH: "{{ s3_path }}"

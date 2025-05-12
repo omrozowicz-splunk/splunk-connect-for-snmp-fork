@@ -70,34 +70,6 @@ wait_for_sc4snmp_pods_to_be_up() {
   done
 }
 
-
-create_inventory_upgrade_check_script() {
-    cat << 'EOF' > /home/runner/work/splunk-connect-for-snmp/splunk-connect-for-snmp/is_inventory_upgraded.sh
-#!/bin/bash
-while [ "$(sudo microk8s kubectl get job -n sc4snmp | grep Complete | wc -l)" != "1" ]; do
-    echo "Waiting for inventory upgrade to finish..."
-    sleep 1
-done
-EOF
-    chmod a+x /home/runner/work/splunk-connect-for-snmp/splunk-connect-for-snmp/is_inventory_upgraded.sh
-}
-
-create_inventory_correctly_deleted_script() {
-    cat << 'EOF' > /home/runner/work/splunk-connect-for-snmp/splunk-connect-for-snmp/is_inventory_pod_deleted.sh
-#!/bin/bash
-while [ "$(microk8s kubectl get pods -n sc4snmp | grep splunk-connect-for-snmp-inventory | wc -l )" = "1" ] ; do
-    echo "Waiting for inventory pod to die..."
-    sleep 1
-done
-EOF
-    chmod a+x /home/runner/work/splunk-connect-for-snmp/splunk-connect-for-snmp/is_inventory_pod_deleted.sh
-}
-
-create_all_tool_scripts() {
-  create_inventory_upgrade_check_script
-  create_inventory_correctly_deleted_script
-}
-
 sudo apt-get update -y
 sudo apt-get install snmpd -y
 sudo sed -i -E 's/agentaddress[[:space:]]+127.0.0.1,\[::1\]/#agentaddress  127.0.0.1,\[::1\]\nagentaddress udp:1161,udp6:[::1]:1161/g' /etc/snmp/snmpd.conf
@@ -124,6 +96,8 @@ wait_for_splunk
 
 cd integration_tests
 chmod u+x prepare_splunk.sh
+chmod u+x is_inventory_pod_deleted.sh
+chmod u+x is_inventory_upgraded.sh
 echo $(green "Preparing Splunk instance")
 ./prepare_splunk.sh
 ./install_sck.sh
@@ -163,4 +137,3 @@ if [[ $1 == 'integration' ]]; then
   define_python
   deploy_poetry
 fi
-create_all_tool_scripts
